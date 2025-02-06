@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react';
 import { Alert, Collapse } from '@mui/material';
+import axios from 'axios';
 import './pixelcanvas'
 import "./pdfhome.css"
+import { useNavigate } from 'react-router-dom';
 
 export default function PdfHome() {
     const [warning, setWarning] = useState('');
     const fileInputRef = useRef(null);
-
+    const nav = useNavigate()
     const handleFileUpload = async (event) => {
         const file = event.target.files[0];
         const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
@@ -24,18 +26,7 @@ export default function PdfHome() {
 
         // Handle file upload to backend
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const response = await fetch('YOUR_BACKEND_URL/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) throw new Error('Upload failed');
-
-            // Handle successful upload
-            console.log('File uploaded successfully');
+            nav('/uploadquestions');
         } catch (error) {
             setWarning('Failed to upload file. Please try again.');
             console.error('Upload error:', error);

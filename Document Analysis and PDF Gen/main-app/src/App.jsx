@@ -3,6 +3,7 @@ import Home from "./screens/home";
 import PdfHome from "./screens/pdfhome";
 import LoginPage from "./screens/login";
 import SignUp from "./screens/signup";
+import UploadQuestions from "./screens/uploadquestions";
 export default function App(){
   return (
     <>
@@ -12,6 +13,8 @@ export default function App(){
         <Route path="/pdf" element={<PdfHome />} />
         <Route path="/signin" element={<LoginPage />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/uploadquestions" element={<UploadQuestions />} />
+
       </Routes>
       </BrowserRouter>
     </>

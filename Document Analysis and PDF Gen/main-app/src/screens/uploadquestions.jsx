@@ -5,7 +5,7 @@ import "./uploadquestions.css";
 import { useNavigate } from 'react-router-dom';
 import { Button, Stack, Snackbar, Alert } from '@mui/material';
 import Sortable from 'sortablejs';
-import { AddCircle, CloudUpload, Delete as DeleteIcon, Send } from '@mui/icons-material';
+import { AddCircle, CloudUpload, Delete as DeleteIcon, Send, Edit as EditIcon } from '@mui/icons-material';
 import Loading from './loading';
 
 
@@ -20,6 +20,8 @@ export default function PdfHome() {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const [loading, setLoading] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [editValue, setEditValue] = useState('');
 
     // A stable callback that always has the latest 'questions'
     const onEnd = useCallback((evt) => {
@@ -149,6 +151,24 @@ export default function PdfHome() {
         setSnackbarOpen(true);
     };
 
+    const handleEditStart = (question) => {
+        setEditingId(question.id);
+        setEditValue(question.content);
+    };
+
+    const handleEditSave = (id) => {
+        if (editValue.trim()) {
+            setQuestions(questions.map(q => 
+                q.id === id ? { ...q, content: editValue.trim() } : q
+            ));
+            setEditingId(null);
+            setEditValue('');
+            setSnackbarSeverity('success');
+            setSnackbarMessage('Question updated.');
+            setSnackbarOpen(true);
+        }
+    };
+
     return (
         loading ? <Loading /> :
         (<div className='upload-body'>
@@ -206,17 +226,41 @@ export default function PdfHome() {
                     {questions.map((question) => (
                         <div key={question.id} className="question-item" data-id={question.id}>
                             <span className="drag-handle">☰</span>
-                            <span className="question-content">{question.content}</span>
-                            <Button
-                                variant="outlined"
-                                color="error"
-                                size="small"
-                                startIcon={<DeleteIcon />}
-                                onClick={() => handleDeleteQuestion(question.id)}
-                                sx={{ ml: 2, minWidth: '100px' }}
-                            >
-                                Delete
-                            </Button>
+                            {editingId === question.id ? (
+                                <input
+                                    type="text"
+                                    className="question-content editable"
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    onBlur={() => handleEditSave(question.id)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleEditSave(question.id)}
+                                    autoFocus
+                                />
+                            ) : (
+                                <span className="question-content">{question.content}</span>
+                            )}
+                            <div className="question-actions">
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<EditIcon />}
+                                    onClick={() => handleEditStart(question)}
+                                    sx={{ minWidth: '100px' }}
+                                >
+                                    Edit
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    size="small"
+                                    startIcon={<DeleteIcon />}
+                                    onClick={() => handleDeleteQuestion(question.id)}
+                                    sx={{ minWidth: '100px' }}
+                                >
+                                    Delete
+                                </Button>
+                            </div>
                         </div>
                     ))}
                 </div>

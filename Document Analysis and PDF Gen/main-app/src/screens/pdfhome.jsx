@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Alert, Collapse } from '@mui/material';
 import axios from 'axios';
 import './pixelcanvas'
@@ -7,6 +7,31 @@ import { useNavigate } from 'react-router-dom';
 
 export default function PdfHome() {
     const [warning, setWarning] = useState('');
+    const [documentLinks, setDocumentLinks] = useState([]);
+    const [previewUrl, setPreviewUrl] = useState(null);
+
+    useEffect(() => {
+        const fetchDocuments = async () => {
+            try {
+                const res = await axios.get('http://localhost:8080/getDocuments', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'user-email': localStorage.getItem('email')
+                    }
+                });
+                const urls = res.data.documents.map(doc => doc.downloadUrl);
+                
+                setDocumentLinks(urls.reverse());
+            } catch (err) {
+                console.error('Failed to fetch documents:', err);
+            }
+        };
+        fetchDocuments();
+    }, []); // Empty dependency array ensures the effect runs only once
+
+    console.log(documentLinks);
+    
+    
     const fileInputRef = useRef(null);
     const nav = useNavigate()
     const handleFileUpload = async (event) => {
@@ -24,13 +49,32 @@ export default function PdfHome() {
 
         setWarning('');
 
+        const formData = new FormData();
+        formData.append('document', file);
+
         // Handle file upload to backend
         try {
+            
+            await axios.post('http://localhost:8080/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'user-email': localStorage.getItem('email')
+                }
+            });
             nav('/uploadquestions');
         } catch (error) {
             setWarning('Failed to upload file. Please try again.');
             console.error('Upload error:', error);
         }
+    };
+
+    const openPreview = (url) => {
+        setPreviewUrl(url);
+    };
+
+    const closePreview = () => {
+        setPreviewUrl(null);
     };
 
     return (
@@ -77,28 +121,66 @@ export default function PdfHome() {
                         document.querySelector('.pdf-history').scrollBy({ left: -960, behavior: 'smooth' });
                     }}>{'<'}</button>
                     <div className="pdf-history">
-                        <div className="pdf-item">Generated PDF #1</div>
-                        <div className="pdf-item">Generated PDF #2</div>
-                        <div className="pdf-item">Generated PDF #3</div>
-                        <div className="pdf-item">Generated PDF #4</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
-                        <div className="pdf-item">Generated PDF #5</div>
+                        {documentLinks.map((link, index) => (
+                            <div key={index} className="pdf-item">
+                                <iframe
+                                    src={link}
+                                    title={`Document ${index + 1}`}
+                                    width="100%"
+                                    height="100%"
+                                    scrolling='no'
+                                    style={{ border: 'none' }}
+                                />
+                                <div className="pdf-item-buttons">
+                                    <button 
+                                        className="pdf-button"
+                                        onClick={() => openPreview(link)}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                                            <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" />
+                                        </svg>
+                                        Preview
+                                    </button>
+                                    <a 
+                                        href={link}
+                                        download
+                                        className="pdf-button"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                            <path fillRule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" />
+                                        </svg>
+                                        Download
+                                    </a>
+                                    
+                                </div>
+                                
+                            </div>
+                        ))}
                     </div>
                     <button className="scroll-btn" onClick={() => {
                         document.querySelector('.pdf-history').scrollBy({ left: 960, behavior: 'smooth' });
                     }}>{'>'}</button>
                 </div>
             </main>
+            {previewUrl && (
+                <div className="preview-modal" onClick={closePreview}>
+                    <div className="preview-content" onClick={e => e.stopPropagation()}>
+                        <button className="close-preview" onClick={closePreview}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" />
+                            </svg>
+                        </button>
+                        <iframe
+                            src={previewUrl}
+                            title="PDF Preview"
+                            width="100%"
+                            height="100%"
+                            scrolling='no'
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

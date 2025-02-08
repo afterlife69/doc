@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./screens/home";
 import PdfHome from "./screens/pdfhome";
-import LoginPage from "./screens/login";
+import Login from "./screens/login";
 import SignUp from "./screens/signup";
 import UploadQuestions from "./screens/uploadquestions";
 export default function App(){
@@ -11,7 +11,7 @@ export default function App(){
       <Routes>
         <Route path="/home" element={<Home />} />
         <Route path="/pdf" element={<PdfHome />} />
-        <Route path="/signin" element={<LoginPage />} />
+        <Route path="/signin" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/uploadquestions" element={<UploadQuestions />} />
 
